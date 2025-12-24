@@ -54,29 +54,38 @@ with col2:
 ratio_map = {"1:1 (Square)": "1024x1024", "16:9 (Widescreen)": "1920x1080", "9:16 (Story)": "1080x1920"}
 width, height = ratio_map[aspect_ratio].split('x')
 
-if st.button("Generate Masterpiece ✨"):
+if st.button("Generate Masterpiece"):
     if not prompt:
         st.warning("Please describe what you want to see!")
     else:
         try:
             with st.spinner("AI is painting your image..."):
-                # Constructing the Pollinations URL
+                # 1. Encode the prompt correctly
                 encoded_prompt = requests.utils.quote(prompt)
                 image_url = f"https://pollinations.ai/p/{encoded_prompt}?width={width}&height={height}&seed={seed}&model=flux"
                 
-                # Display the image directly from the URL
-                st.image(image_url, caption=f"Generated: {prompt}", use_container_width=True)
-                
-                # Provide a Download Button
+                # 2. Fetch the image data directly (This fixes the broken image issue)
                 response = requests.get(image_url)
-                st.download_button(
-                    label="Download Image 📥",
-                    data=response.content,
-                    file_name="ai_generated_image.jpg",
-                    mime="image/jpeg"
-                )
+                
+                if response.status_code == 200:
+                    image_data = BytesIO(response.content)
+                    img = Image.open(image_data)
+                    
+                    # 3. Display the actual image object
+                    st.image(img, caption=f"Generated: {prompt}", use_container_width=True)
+                    
+                    # 4. Download Button
+                    st.download_button(
+                        label="Download Image 📥",
+                        data=response.content,
+                        file_name="ai_generated_image.jpg",
+                        mime="image/jpeg"
+                    )
+                else:
+                    st.error("The image server is busy. Please try again in a moment.")
+                    
         except Exception as e:
-            st.error(f"Error generating image: {e}")
+            st.error(f"Error: {e}")
 
 st.markdown("---")
 st.markdown("<p style='text-align: center; font-size: 0.8em; color: gray;'>Powered by <b>TheTechInfo.net</b></p>", unsafe_allow_html=True)
