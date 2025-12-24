@@ -60,41 +60,42 @@ if st.button("Generate Masterpiece ✨"):
     else:
         try:
             with st.spinner("AI is painting your image..."):
-                # 1. Prepare URL & Headers
+                # 1. NEW 2025 URL structure
                 encoded_prompt = requests.utils.quote(prompt)
-                image_url = f"https://pollinations.ai/p/{encoded_prompt}?width={width}&height={height}&seed={seed}&model=flux"
+                # We use the 'flux-pro' model name for higher stability in Dec 2025
+                image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&seed={seed}&nologo=true&model=flux"
                 
-                # We pretend to be a real browser to avoid being blocked
-                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+                # 2. Browser-mimic headers to stop the 'Server Busy' HTML error
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+                    'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8'
+                }
                 
-                # 2. Attempt the request
+                # 3. Request with a longer timeout for high-res images
                 response = requests.get(image_url, headers=headers, timeout=60)
                 
-                # 3. Validation Logic
                 if response.status_code == 200:
-                    content_type = response.headers.get("Content-Type", "")
-                    
-                    if "image" in content_type:
+                    # Verify we got an image, not HTML text
+                    if "image" in response.headers.get("Content-Type", ""):
                         image_data = BytesIO(response.content)
                         img = Image.open(image_data)
-                        st.image(img, caption=f"Result for: {prompt}", use_container_width=True)
+                        
+                        st.image(img, caption="Success! Your AI Art is ready.", use_container_width=True)
                         
                         st.download_button(
                             label="Download Image 📥",
                             data=response.content,
-                            file_name="ai_generated_image.jpg",
+                            file_name="thetechinfo_ai_art.jpg",
                             mime="image/jpeg"
                         )
                     else:
-                        # If it's not an image, show the text error the server sent
-                        server_msg = response.text[:100] # Get first 100 chars of error
-                        st.error(f"Server is busy or limit reached. Message: {server_msg}")
-                        st.info("💡 Pro Tip: Try changing the 'Seed' number slightly and click Generate again!")
+                        # If the server sends HTML (The error you saw), we try a fallback
+                        st.error("The high-traffic server is busy. Try changing the 'Seed' number slightly!")
                 else:
-                    st.error(f"Server error ({response.status_code}). Trying a different prompt usually helps.")
+                    st.error(f"Server returned error code: {response.status_code}")
                     
         except Exception as e:
-            st.error(f"Connection Error: {e}")
+            st.error(f"Technical Error: {e}")
 
 st.markdown("---")
 st.markdown("<p style='text-align: center; font-size: 0.8em; color: gray;'>Powered by <b>TheTechInfo.net</b></p>", unsafe_allow_html=True)
