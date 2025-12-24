@@ -60,19 +60,23 @@ if st.button("Generate Masterpiece ✨"):
     else:
         try:
             with st.spinner("AI is painting your image..."):
-                # 1. Prepare URL
+                # 1. Prepare URL & Headers
                 encoded_prompt = requests.utils.quote(prompt)
                 image_url = f"https://pollinations.ai/p/{encoded_prompt}?width={width}&height={height}&seed={seed}&model=flux"
                 
-                # 2. Try to get the image
-                response = requests.get(image_url, timeout=30)
+                # We pretend to be a real browser to avoid being blocked
+                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
                 
+                # 2. Attempt the request
+                response = requests.get(image_url, headers=headers, timeout=60)
+                
+                # 3. Validation Logic
                 if response.status_code == 200:
-                    # Check if the content is actually an image
-                    if "image" in response.headers.get("Content-Type", ""):
+                    content_type = response.headers.get("Content-Type", "")
+                    
+                    if "image" in content_type:
                         image_data = BytesIO(response.content)
-                        img = Image.open(image_data) # This is where it was failing
-                        
+                        img = Image.open(image_data)
                         st.image(img, caption=f"Result for: {prompt}", use_container_width=True)
                         
                         st.download_button(
@@ -82,9 +86,12 @@ if st.button("Generate Masterpiece ✨"):
                             mime="image/jpeg"
                         )
                     else:
-                        st.error("The AI server returned text instead of an image. Please try a different prompt.")
+                        # If it's not an image, show the text error the server sent
+                        server_msg = response.text[:100] # Get first 100 chars of error
+                        st.error(f"Server is busy or limit reached. Message: {server_msg}")
+                        st.info("💡 Pro Tip: Try changing the 'Seed' number slightly and click Generate again!")
                 else:
-                    st.error(f"Server error (Status {response.status_code}). Please try again in 10 seconds.")
+                    st.error(f"Server error ({response.status_code}). Trying a different prompt usually helps.")
                     
         except Exception as e:
             st.error(f"Connection Error: {e}")
