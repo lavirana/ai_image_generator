@@ -98,4 +98,4 @@ if st.button("Generate Masterpiece ✨"):
             st.error(f"Technical Error: {e}")
 
 st.markdown("---")
-st.markdown("<p style='text-align: center; font-size: 0.8em; color: gray;'>Powered by <b>TheTechInfo.net</b></p>", unsafe_allow_html=True)
+#st.markdown("<p style='text-align: center; font-size: 0.8em; color: gray;'>Powered by <b>TheTechInfo.net</b></p>", unsafe_allow_html=True)
